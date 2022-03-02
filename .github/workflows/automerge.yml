@@ -1,23 +1,63 @@
-name: Dependabot auto-merge
-on: pull_request
+name: "Pull Request Auto Merge"
+
+on:
+  workflow_run:
+    workflows: ["Syntax and Lint"]
+    types:
+      - completed
 
 permissions:
-  pull-requests: write
   contents: write
+  pull-requests: write
 
 jobs:
-  dependabot:
+  Dependabot-Automerge:
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    # Contains workaround to execute if dependabot updates the PR by checking for the base branch in the linked PR
+    # The the github.event.workflow_run.event value is 'push' and not 'pull_request'
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.actor == 'dependabot[bot]'
+      && github.event.sender.login == 'dependabot[bot]'
+      && github.event.sender.type == 'Bot'
+      && (github.event.workflow_run.event == 'pull_request'
+          || (github.event.workflow_run.event == 'push' && github.event.workflow_run.pull_requests[0].base.ref == github.event.repository.default_branch ))
     steps:
-      - name: Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@v1.1.1
+      - name: Approve Changes and Merge changes if label 'dependencies' is set
+        uses: actions/github-script@v4.0.2
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Enable auto-merge for Dependabot PRs
-        if: ${{contains(steps.metadata.outputs.dependency-names, 'my-dependency') && steps.metadata.outputs.update-type == 'version-update:semver-patch'}}
-        run: gh pr merge --auto --merge "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            var labelNames = await github.paginate(
+              github.issues.listLabelsOnIssue,
+              {
+                repo: context.repo.repo,
+                owner: context.repo.owner,
+                issue_number: context.payload.workflow_run.pull_requests[0].number,
+              },
+              (response) => response.data.map(
+                (label) => label.name
+              )
+            );
+
+            console.log(labelNames);
+
+            if (labelNames.includes('dependencies')) {
+              console.log('Found label');
+
+              await github.pulls.createReview({
+                repo: context.repo.repo,
+                owner: context.repo.owner,
+                pull_number: context.payload.workflow_run.pull_requests[0].number,
+                event: 'APPROVE'
+              });
+              console.log('Approved PR');
+
+              await github.pulls.merge({
+                repo: context.repo.repo,
+                owner: context.repo.owner,
+                pull_number: context.payload.workflow_run.pull_requests[0].number,
+              });
+
+              console.log('Merged PR');
+            }
