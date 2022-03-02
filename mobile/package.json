@@ -10,17 +10,17 @@
   "dependencies": {
     "@react-native-community/masked-view": "^0.1.11",
     "axios": "^0.26.0",
-    "expo": "~44.0.6",
+    "expo": "^1.0.0",
     "expo-location": "~12.1.2",
     "react": "~17.0.2",
     "react-dom": "~17.0.2",
-    "react-native": "https://github.com/expo/react-native/archive/sdk-36.0.0.tar.gz",
+    "react-native": "^0.67.0",
     "react-native-gesture-handler": "~1.10.3",
     "react-native-maps": "0.30.1",
     "react-native-reanimated": "~2.2.2",
     "react-native-safe-area-context": "3.3.2",
     "react-native-screens": "3.13.0",
-    "react-native-web": "~0.11.7",
+    "react-native-web": "^0.17.7",
     "react-native-webview": "11.13.0",
     "react-navigation": "^4.4.4",
     "react-navigation-stack": "^2.10.4",
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.17.5",
-    "babel-preset-expo": "~8.4.0"
+    "babel-preset-expo": "^9.0.2"
   },
   "private": true
 }
